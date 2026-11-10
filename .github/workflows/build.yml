@@ -30,7 +30,7 @@ jobs:
         run: node scripts/build-ui.cjs
 
       - name: Build installer
-        run: npx electron-builder --win nsis
+        run: npx electron-builder --win nsis --publish never
         env:
           ELECTRON_BUILDER_CACHE: ${{ runner.temp }}\eb-cache
 
