@@ -1,0 +1,11 @@
+[
+ {"type":"click","selector":"#rx-q"},
+ {"type":"fill","selector":"#rx-q","value":"Adopt"},
+ {"type":"assert","selector":"#rx-shown","property":"text","equals":"1 игра"},
+ {"type":"fill","selector":"#rx-q","value":""},
+ {"type":"assert","selector":"#rx-shown","property":"text","equals":"60 игр"},
+ {"type":"click","selector":"#rx-top .rx-card"},
+ {"type":"assert","selector":"#rx-modal","property":"class","equals":"rx-open"},
+ {"type":"click","selector":"#rx-m-close"},
+ {"type":"assert","selector":"#rx-modal","property":"class","equals":""}
+]

@@ -1,0 +1,53 @@
+{
+  "name": "rbx-hub",
+  "version": "1.3.0",
+  "description": "RBX Hub — каталог игр Roblox",
+  "main": "main.js",
+  "author": "RBX Hub",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.rbxhub.app",
+    "productName": "RBX Hub",
+    "directories": {
+      "output": "installer",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app.ico",
+      "ui/**/*"
+    ],
+    "win": {
+      "icon": "app.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RBX Hub",
+      "artifactName": "RBX-Hub-Setup-1.3.0.exe",
+      "language": "1049"
+    }
+  }
+}
