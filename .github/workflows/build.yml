@@ -11,7 +11,21 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            artifacts: installer/*.exe
+          - os: ubuntu-latest
+            platform: linux
+            artifacts: installer/*.AppImage
+          - os: macos-latest
+            platform: mac
+            artifacts: installer/*.dmg
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -29,22 +43,38 @@ jobs:
       - name: Build UI
         run: node scripts/build-ui.cjs
 
-      - name: Build installer
+      - name: Build (Windows)
+        if: matrix.platform == 'win'
         run: npx electron-builder --win nsis --publish never
         env:
-          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}\eb-cache
+          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/eb-cache
+
+      - name: Build (Linux)
+        if: matrix.platform == 'linux'
+        run: npx electron-builder --linux AppImage --publish never
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/eb-cache
+
+      - name: Build (macOS)
+        if: matrix.platform == 'mac'
+        run: npx electron-builder --mac dmg --publish never
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/eb-cache
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rbx-hub-installer
-          path: installer/*.exe
+          name: rbx-hub-${{ matrix.platform }}
+          path: ${{ matrix.artifacts }}
           if-no-files-found: error
 
-      - name: Publish release
+      - name: Publish release asset
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: installer/*.exe
+          files: ${{ matrix.artifacts }}
           generate_release_notes: true
           draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
