@@ -1,10 +1,10 @@
-# RBX Hub
+﻿# RBX Hub
 
 Десктопное приложение для Windows — каталог популярных игр Roblox. Поиск, фильтры по жанрам, топы, случайная игра и живые данные по онлайну и рейтингу.
 
 ![Electron](https://img.shields.io/badge/Electron-45-47848F?logo=electron&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078D6?logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/Version-1.3.0-7c4dff)
+![Version](https://img.shields.io/badge/Version-1.4.0-7c4dff)
 
 ---
 
@@ -38,7 +38,7 @@
 
 ### Готовый установщик
 
-1. Скачайте `RBX-Hub-Setup-1.3.0.exe`
+1. Скачайте `RBX-Hub-Setup-1.4.0.exe`
 2. Запустите — установщик предложит выбрать папку
 3. На рабочем столе и в «Пуске» появится ярлык **RBX Hub**
 
