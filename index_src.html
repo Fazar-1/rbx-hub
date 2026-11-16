@@ -99,8 +99,8 @@ body.rx-hideicons .rx-tn{display:none}
 #rx-modal{position:fixed;inset:0;background:rgba(6,6,14,.84);display:none;align-items:center;justify-content:center;padding:20px;z-index:1000}
 #rx-modal.open{display:flex}
 #rx-sheet{width:min(720px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#171728;border:1px solid #2e2e4d;border-radius:22px;position:relative;color:#ecefff;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;padding:26px 24px}
-#rx-m-close{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;background:#24243d;color:#ecefff;border:0;font-size:20px;cursor:pointer;line-height:1;padding:0}
-#rx-m-close:hover{background:#2e2e4d}
+#rx-m-close,#rx-set-close{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;background:#24243d;color:#ecefff;border:0;font-size:20px;cursor:pointer;line-height:1;padding:0}
+#rx-m-close:hover,#rx-set-close:hover{background:#2e2e4d}
 #rx-m-head{display:flex;gap:16px;align-items:center;margin:0 44px 12px 0}
 #rx-m-icon{width:76px;height:76px;border-radius:16px;background:#24243d;overflow:hidden;flex:0 0 auto;display:grid;place-items:center;font-size:28px;font-weight:900;color:#7c4dff}
 #rx-m-icon img{width:100%;height:100%;object-fit:cover}
@@ -123,9 +123,9 @@ body.rx-hideicons .rx-tn{display:none}
   <div id="rx-head"><div id="rx-wrap"><div id="rx-head-in">
     <div id="rx-logo"><div class="rx-mark">R</div><span>RBX&nbsp;<span class="rx-b">Hub</span></span></div>
     <div id="rx-nav">
-      <a data-go="rx-catalog" class="rx-on">Каталог</a>
-      <a data-go="rx-top-sec">Топ игр</a>
-      <a id="rx-nav-random">Случайная игра</a>
+      <a href="#rx-catalog" data-go="rx-catalog" class="rx-on">Каталог</a>
+      <a href="#rx-top-sec" data-go="rx-top-sec">Топ игр</a>
+      <a href="#" id="rx-nav-random" role="button">Случайная игра</a>
     </div>
     <div id="rx-live"><span class="rx-dot"></span><span id="rx-live-t">подключение…</span></div>
     <button id="rx-gear" type="button" aria-label="Настройки приложения" title="Настройки (Ctrl + ,)">⚙ Настройки</button>
@@ -202,6 +202,8 @@ body.rx-hideicons .rx-tn{display:none}
         <button class="rx-btn rx-ghost" id="rx-m-pick" type="button">Случайная игра</button>
       </div>
     </div>
+  </div>
+
   <div id="rx-set" role="dialog" aria-modal="true" aria-labelledby="rx-set-title" aria-hidden="true">
     <div id="rx-set-sheet">
       <button id="rx-set-close" type="button" aria-label="Закрыть">&times;</button>
@@ -358,6 +360,12 @@ body.rx-hideicons .rx-tn{display:none}
     return String(n);
   }
 
+  function describe(g){
+    return g.name + " — игра Roblox в жанре «" + g.genre + "». " +
+      "Сейчас в ней около " + fmt(g.players) + " игроков, рейтинг " + g.rating.toFixed(1) + " из 5 " +
+      "по оценкам пользователей Roblox.";
+  }
+
   function makeGame(raw, idx){
     var g = {
       id: idx,
@@ -372,16 +380,18 @@ body.rx-hideicons .rx-tn{display:none}
       iconFailed: false
     };
     if (GENRES.indexOf(g.genre) === -1) GENRES.push(g.genre);
-    g.desc = g.name + " — игра Roblox в жанре «" + g.genre.toLowerCase() + "». " +
-      "Сейчас в ней около " + fmt(g.players) + " игроков, рейтинг " + g.rating.toFixed(1) + " из 5 " +
-      "по оценкам пользователей Roblox.";
+    g.desc = describe(g);
     return g;
   }
 
   var GAMES = REAL_GAMES.map(makeGame);
   GENRES.sort(function(a, b){ return a.localeCompare(b, "ru"); });
   var GAME_BY_ID = Object.create(null);
-  for (var gi = 0; gi < GAMES.length; gi++) GAME_BY_ID[GAMES[gi].id] = GAMES[gi];
+  var LIVE_BY_UNIVERSE = Object.create(null);
+  for (var gi = 0; gi < GAMES.length; gi++) {
+    GAME_BY_ID[GAMES[gi].id] = GAMES[gi];
+    if (GAMES[gi].universeId) LIVE_BY_UNIVERSE[GAMES[gi].universeId] = GAMES[gi];
+  }
 
   var state = { q: "", genre: "Все", limit: 24, sort: "online" };
 
@@ -666,19 +676,27 @@ body.rx-hideicons .rx-tn{display:none}
     $("rx-more").style.display = list.length > show ? "" : "none";
   }
 
-  function renderTop(){
+  function renderTop(keepFocus){
+    var active = document.activeElement && document.activeElement.closest ? document.activeElement.closest(".rx-card") : null;
+    var activeId = active ? active.getAttribute("data-id") : null;
     var top = GAMES.slice().sort(function(a, b){ return b.players - a.players || b.rating - a.rating; }).slice(0, 8);
     var frag = document.createDocumentFragment();
     for (var i = 0; i < top.length; i++) frag.appendChild(card(top[i], i + 1));
     $("rx-top").innerHTML = "";
     $("rx-top").appendChild(frag);
+    if (keepFocus && activeId){
+      var again = $("rx-top").querySelector('.rx-card[data-id="' + activeId + '"]');
+      if (again) again.focus();
+    }
   }
 
   function renderChips(){
     var box = $("rx-chips");
     var frag = document.createDocumentFragment();
     var names = ["Все"];
+    var extra = GAMES.filter(function(g){ return g.genre === "Другое"; }).length;
     for (var k = 0; k < GENRES.length; k++) if (GENRES[k] !== "Другое") names.push(GENRES[k]);
+    if (extra) names.push("Другое");
     for (var i = 0; i < names.length; i++){
       var b = el("button", "rx-chip" + (state.genre === names[i] ? " rx-on" : ""), names[i]);
       b.type = "button";
@@ -690,11 +708,22 @@ body.rx-hideicons .rx-tn{display:none}
     box.appendChild(frag);
   }
 
+  function thousands(n){
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+
+  function chipNames(){
+    var names = ["Все"];
+    for (var k = 0; k < GENRES.length; k++) if (GENRES[k] !== "Другое") names.push(GENRES[k]);
+    if (GENRES.indexOf("Другое") !== -1) names.push("Другое");
+    return names;
+  }
+
   function renderStats(){
     var total = 0, sum = 0;
     for (var i = 0; i < GAMES.length; i++){ total += GAMES[i].players; sum += GAMES[i].rating; }
-    $("rx-s-total").textContent = String(GAMES.length);
-    $("rx-s-genres").textContent = String(GENRES.length);
+    $("rx-s-total").textContent = thousands(GAMES.length);
+    $("rx-s-genres").textContent = String(chipNames().length - 1);
     $("rx-s-rating").textContent = GAMES.length ? (sum / GAMES.length).toFixed(1).replace(".", ",") : "0,0";
     $("rx-s-online").textContent = fmt(total);
   }
@@ -739,9 +768,16 @@ body.rx-hideicons .rx-tn{display:none}
     }
   }
 
+  function openExternal(g){
+    if (!g || !g.placeId) return false;
+    window.open("https://www.roblox.com/games/" + g.placeId, "_blank");
+    return true;
+  }
+
   function openGame(id){
     var g = GAME_BY_ID[id];
     if (!g) return;
+    if (SET.openMode === "browser" && openExternal(g)) return;
     lastFocus = document.activeElement;
     openId = id;
     paintModal(g);
@@ -768,16 +804,19 @@ body.rx-hideicons .rx-tn{display:none}
 
     function match(g){
       if (genre !== "Все" && g.genre !== genre) return false;
-      if (minOnline > 0){ if (g.players < minOnline) return false; }
-      else if (g.players <= 0) return false;
+      if (minOnline > 0 && g.players < minOnline) return false;
       if (minRating > 0 && g.rating < minRating) return false;
       return true;
     }
 
     var pool = base.filter(match);
-    if (!pool.length) pool = base.filter(function(g){ return genre === "Все" || g.genre === genre; });
-    if (!pool.length) pool = base.slice();
-    if (!pool.length) pool = GAMES.slice();
+    var relaxed = false;
+    if (!pool.length) {
+      pool = base.filter(function(g){ return genre === "Все" || g.genre === genre; });
+      relaxed = true;
+    }
+    if (!pool.length) { pool = base.slice(); relaxed = true; }
+    if (!pool.length) { pool = GAMES.slice(); relaxed = true; }
 
     var avoid = Number(SET.rndAvoid) || 0;
     if (avoid > 0) {
@@ -786,13 +825,19 @@ body.rx-hideicons .rx-tn{display:none}
       var fresh = pool.filter(function(g){ return !bad[g.id]; });
       if (fresh.length) pool = fresh;
     }
+    pickPool.relaxed = relaxed;
     return pool;
   }
 
   function updatePickInfo(){
-    if (!$("rx-pickinfo")) return;
+    var box = $("rx-pickinfo");
+    if (!box) return;
     var n = pickPool().length;
-    $("rx-pickinfo").textContent = "случайная игра: " + n + " " + plural(n, "кандидат", "кандидата", "кандидатов");
+    var text = n + " " + plural(n, "кандидат", "кандидата", "кандидатов");
+    box.textContent = pickPool.relaxed ? text + " · фильтры ослаблены" : text;
+    box.title = pickPool.relaxed
+      ? "Под фильтры случайной игры не подошла ни одна игра — ограничения ослаблены"
+      : "Столько игр подходит под настройки случайной игры";
   }
 
   function randomGame(){
@@ -803,10 +848,6 @@ body.rx-hideicons .rx-tn{display:none}
     if (recentPicks.length > 100) recentPicks.length = 100;
     try { window.localStorage.setItem("rbxhub.recentPicks", JSON.stringify(recentPicks)); } catch (e) {}
 
-    if (SET.openMode === "browser" && g.placeId) {
-      window.open("https://www.roblox.com/games/" + g.placeId, "_blank");
-      return;
-    }
     openGame(g.id);
   }
 
@@ -868,7 +909,10 @@ body.rx-hideicons .rx-tn{display:none}
   function api(url){
     return fetch(url, { cache: "no-store", credentials: "omit" })
       .then(function(r){ return r.ok ? r.json() : null; })
-      .catch(function(){ return null; });
+      .catch(function(err){
+        if (window.console && console.warn) console.warn("RBX Hub: запрос не выполнен", url, err && err.message);
+        return null;
+      });
   }
 
   function i18nGenre(raw){
@@ -891,44 +935,50 @@ body.rx-hideicons .rx-tn{display:none}
     setLiveText("обновляю…", false);
     var jobs = [];
     for (var i = 0; i < ids.length; i += 50) jobs.push(ids.slice(i, i + 50));
-    return Promise.all(jobs.map(function(chunk){
-      return api("https://games.roblox.com/v1/games?universeIds=" + chunk.join(","));
+    var ok = 0, bad = 0;
+    return Promise.all(jobs.map(function(chunk, idx){
+      return new Promise(function(resolve){
+        setTimeout(function(){
+          api("https://games.roblox.com/v1/games?universeIds=" + chunk.join(",")).then(function(res){
+            if (res && res.data) ok++; else bad++;
+            resolve(res);
+          });
+        }, idx * 120);
+      });
     })).then(function(results){
       var seen = 0;
       results.forEach(function(res){
         var list = res && res.data ? res.data : [];
         for (var i = 0; i < list.length; i++){
           var d = list[i];
+          var g = LIVE_BY_UNIVERSE[d.id];
+          if (!g) continue;
           var up = d.totalUpVotes || 0, down = d.totalDownVotes || 0;
           var ratio = (up + down) > 0 ? Math.round((up / (up + down)) * 50) / 10 : null;
-          for (var k = 0; k < GAMES.length; k++){
-            var g = GAMES[k];
-            if (g.universeId !== d.id) continue;
-            if (typeof d.playing === "number") g.players = d.playing;
-            if (d.visits) g.visits = d.visits;
-            if (ratio != null && ratio > 0) g.rating = ratio;
-            else if (d.totalUpVotes && up > 0) g.rating = Math.round((up / (up + down)) * 50) / 10;
-            g.desc = g.name + " — игра Roblox в жанре «" + g.genre.toLowerCase() + "». " +
-              "Сейчас в ней около " + fmt(g.players) + " игроков, рейтинг " + g.rating.toFixed(1) + " из 5 " +
-              "по оценкам пользователей Roblox.";
-            seen++;
-            break;
-          }
+          if (typeof d.playing === "number") g.players = d.playing;
+          if (d.visits) g.visits = d.visits;
+          if (ratio != null && ratio > 0) g.rating = ratio;
+          g.desc = describe(g);
+          seen++;
         }
       });
-      return applyLive(seen);
-    }).catch(function(){ return false; });
+      return applyLive(seen, bad);
+    }).catch(function(){ return applyLive(0, 1); });
   }
 
-  function applyLive(seen){
+  function applyLive(seen, failedChunks){
     if (!seen) { setLiveText("нет связи с Roblox", true); return false; }
     var now = new Date();
     DATA_DATE = now.toLocaleDateString("ru-RU") + " " + clockTime();
     $("rx-updated").textContent = "Данные на " + DATA_DATE;
-    setLiveText("онлайн " + fmt(GAMES.reduce(function(s, g){ return s + g.players; }, 0)) + " · обновлено " + clockTime(), false);
+    var partial = failedChunks > 0;
+    setLiveText(
+      (partial ? "часть данных не загрузилась · " : "") +
+      "онлайн " + fmt(GAMES.reduce(function(s, g){ return s + g.players; }, 0)) + " · обновлено " + clockTime(),
+      partial
+    );
     renderStats();
-    renderTop();
-    renderChips();
+    renderTop(true);
     render();
     if (openId != null && GAME_BY_ID[openId]) paintModal(GAME_BY_ID[openId]);
     return true;
@@ -1007,9 +1057,10 @@ body.rx-hideicons .rx-tn{display:none}
     $("rx-nav").addEventListener("click", function(e){
       var a = e.target.closest ? e.target.closest("a") : null;
       if (!a) return;
+      e.preventDefault();
       if (a.id === "rx-nav-random") { randomGame(); return; }
       var go = a.getAttribute("data-go");
-      if (go) { e.preventDefault(); goTo(go); }
+      if (go) goTo(go);
     });
 
     $("rx-random").addEventListener("click", randomGame);

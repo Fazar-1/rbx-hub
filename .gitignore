@@ -8,3 +8,12 @@ Thumbs.db
 
 video-build/
 *.mp4
+
+# сгенерированные дубли и мусор
+/index.html
+/rbx-hub.html
+/games.json
+/games-full.json.bak
+/img/
+*.err
+/icons-fetch.cjs

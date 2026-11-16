@@ -1,6 +1,6 @@
 {
   "name": "rbx-hub",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "RBX Hub — каталог игр Roblox",
   "main": "main.js",
   "author": "RBX Hub",
@@ -51,8 +51,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "RBX Hub",
-      "artifactName": "RBX-Hub-Setup-1.4.0.exe",
-      "language": "1049"
+      "artifactName": "RBX-Hub-Setup-1.5.0.${ext}",
+      "language": "1059"
     },
     "linux": {
       "target": [
@@ -62,7 +62,7 @@
       "category": "Game",
       "synopsis": "Каталог игр Roblox",
       "description": "RBX Hub — каталог игр Roblox с поиском, фильтрами и живыми данными",
-      "artifactName": "RBX-Hub-1.4.0-${arch}.${ext}",
+      "artifactName": "RBX-Hub-1.5.0-${arch}.${ext}",
       "maintainer": "RBX Hub"
     },
     "mac": {
@@ -76,7 +76,7 @@
         }
       ],
       "category": "public.app-category.games",
-      "artifactName": "RBX-Hub-1.4.0-${arch}.${ext}"
+      "artifactName": "RBX-Hub-1.5.0-${arch}.${ext}"
     }
   }
 }

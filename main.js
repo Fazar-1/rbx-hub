@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, nativeTheme } = require("electron");
+const { app, BrowserWindow, shell, Menu, nativeTheme, ipcMain } = require("electron");
 const path = require("path");
 
 let win = null;
@@ -58,13 +58,28 @@ function createWindow() {
 }
 
 function applyZoom(step) {
-  zoom = Math.min(2.5, Math.max(0.6, Math.round((zoom + step) * 100) / 100));
+  setZoom(zoom + step);
+}
+
+function setZoom(value) {
+  const z = Math.min(2.5, Math.max(0.6, Math.round(Number(value) * 100) / 100));
+  if (!isFinite(z)) return zoom;
+  zoom = z;
   if (win) win.webContents.setZoomFactor(zoom);
+  return zoom;
 }
 
 function resetZoom() {
-  zoom = 1;
-  if (win) win.webContents.setZoomFactor(1);
+  setZoom(1);
+}
+
+function bindZoomIpc() {
+  ipcMain.on("zoom:get", (event) => {
+    event.returnValue = zoom;
+  });
+  ipcMain.on("zoom:set", (event, value) => {
+    event.returnValue = setZoom(value);
+  });
 }
 
 function toggleFullscreen() {
@@ -177,6 +192,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.whenReady().then(() => {
+    bindZoomIpc();
     Menu.setApplicationMenu(buildMenu());
     createWindow();
     app.on("activate", () => {
