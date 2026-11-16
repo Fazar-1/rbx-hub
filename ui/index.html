@@ -23,6 +23,9 @@ html,body{background:#0f0f1a;margin:0;padding:0}
 #rx-live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#9ea2c4;background:#1c1c30;border:1px solid #2e2e4d;border-radius:999px;padding:7px 12px}
 #rx-live .rx-dot{width:7px;height:7px}
 #rx-live.rx-live-err{color:#ff9d2e;border-color:#4b3a24}
+#rx-live.rx-live-err .rx-dot{background:#ff9d2e !important;box-shadow:0 0 8px rgba(255,157,46,.6)}
+#rx-live.rx-live-wait{color:#9ea2c4}
+#rx-live.rx-live-wait .rx-dot{background:#9ea2c4 !important;box-shadow:none}
 .rx-hero{padding:36px 0 6px;text-align:center}
 .rx-hero h1{font-size:clamp(28px,4.2vw,54px);line-height:1.1;margin:0 0 14px;font-weight:900;letter-spacing:-.5px;color:#ecefff}
 .rx-hero h1 .rx-grad{color:#00c6ff}
@@ -728,9 +731,12 @@ body.rx-hideicons .rx-tn{display:none}
     $("rx-s-online").textContent = fmt(total);
   }
 
-  function setLiveText(text, bad){
+  function setLiveText(text, bad, waiting){
+    var box = $("rx-live");
     $("rx-live-t").textContent = text;
-    $("rx-live").classList.toggle("rx-live-err", !!bad);
+    box.classList.toggle("rx-live-err", !!bad);
+    box.classList.toggle("rx-live-wait", !bad && !!waiting);
+    box.setAttribute("data-state", bad ? "err" : (waiting ? "wait" : "ok"));
   }
 
   function clockTime(){
@@ -741,6 +747,37 @@ body.rx-hideicons .rx-tn{display:none}
 
   var lastFocus = null;
   var openId = null;
+
+  function focusables(root){
+    if (!root) return [];
+    var nodes = root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+    var out = [];
+    for (var i = 0; i < nodes.length; i++){
+      var n = nodes[i];
+      if (n.offsetParent === null && n !== document.activeElement) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  function trapFocus(e){
+    var box = null;
+    var set = $("rx-set");
+    var modal = $("rx-modal");
+    if (set && set.classList.contains("open")) box = set;
+    else if (modal && modal.classList.contains("open")) box = modal;
+    if (!box) return;
+    var items = focusables(box);
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !box.contains(document.activeElement))){
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !box.contains(document.activeElement))){
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   function paintModal(g){
     $("rx-m-title").textContent = g.name;
@@ -967,7 +1004,7 @@ body.rx-hideicons .rx-tn{display:none}
   }
 
   function applyLive(seen, failedChunks){
-    if (!seen) { setLiveText("нет связи с Roblox", true); return false; }
+    if (!seen) { setLiveText("нет связи с Roblox", true, false); return false; }
     var now = new Date();
     DATA_DATE = now.toLocaleDateString("ru-RU") + " " + clockTime();
     $("rx-updated").textContent = "Данные на " + DATA_DATE;
@@ -1071,9 +1108,11 @@ body.rx-hideicons .rx-tn{display:none}
     });
 
     $("rx-modal").addEventListener("click", function(e){ if (e.target === this) closeGame(); });
+    $("rx-set").addEventListener("click", function(e){ if (e.target === this) closeSettings(); });
     document.addEventListener("keydown", function(e){
       if (e.key === "Escape") { closeSettings(); closeGame(); }
       if (e.key === "," && (e.ctrlKey || e.metaKey)) { e.preventDefault(); openSettings(); }
+      if (e.key === "Tab") trapFocus(e);
     });
 
     bindSettings();
